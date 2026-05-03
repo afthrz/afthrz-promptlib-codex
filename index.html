@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prompt Desk</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <aside class="sidebar" aria-label="Prompt filters">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div>
+            <h1>Prompt Desk</h1>
+            <p>Investing prompts your crew can reuse.</p>
+          </div>
+        </div>
+
+        <button class="primary-action" id="newPromptButton" type="button">
+          <span aria-hidden="true">+</span>
+          New prompt
+        </button>
+
+        <nav class="filter-list" aria-label="Categories">
+          <button class="filter-pill active" type="button" data-filter="all">
+            <span>All prompts</span>
+            <strong id="countAll">0</strong>
+          </button>
+          <button class="filter-pill" type="button" data-filter="investing">
+            <span>Investing</span>
+            <strong id="countInvesting">0</strong>
+          </button>
+          <button class="filter-pill" type="button" data-filter="research">
+            <span>Research</span>
+            <strong id="countResearch">0</strong>
+          </button>
+          <button class="filter-pill" type="button" data-filter="portfolio">
+            <span>Portfolio</span>
+            <strong id="countPortfolio">0</strong>
+          </button>
+          <button class="filter-pill" type="button" data-filter="favorite">
+            <span>Favorites</span>
+            <strong id="countFavorites">0</strong>
+          </button>
+        </nav>
+
+        <div class="side-panel">
+          <div class="panel-heading">
+            <h2>Sharing</h2>
+            <span id="syncBadge">Local</span>
+          </div>
+          <p id="sharingText">Sign in locally to personalize prompts. Add Supabase keys later for true shared accounts and sync.</p>
+          <button class="secondary-action" id="authButton" type="button">Sign in</button>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="search-wrap">
+            <span aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="Search prompts, tickers, tags, authors..." autocomplete="off" />
+          </div>
+          <div class="view-tools" aria-label="Prompt tools">
+            <button class="icon-button" id="exportButton" type="button" title="Export prompts" aria-label="Export prompts">
+              ⇩
+            </button>
+            <button class="icon-button" id="importButton" type="button" title="Import prompts" aria-label="Import prompts">
+              ⇧
+            </button>
+            <input id="importFile" type="file" accept="application/json" hidden />
+          </div>
+        </header>
+
+        <section class="hero" aria-label="Library overview">
+          <div class="hero-copy">
+            <p class="eyebrow">Shared AI workflow library</p>
+            <h2>Copy the exact prompt that gets the job done.</h2>
+            <p>Organize investing research, portfolio checks, meeting prep, and repeatable AI workflows in one fast library.</p>
+          </div>
+          <div class="market-visual" aria-hidden="true">
+            <div class="ticker-row">
+              <span>NVDA</span>
+              <strong>+2.4%</strong>
+            </div>
+            <div class="chart-bars">
+              <i style="height: 46%"></i>
+              <i style="height: 62%"></i>
+              <i style="height: 40%"></i>
+              <i style="height: 75%"></i>
+              <i style="height: 58%"></i>
+              <i style="height: 86%"></i>
+              <i style="height: 70%"></i>
+            </div>
+            <div class="ticker-row muted">
+              <span>Watchlist</span>
+              <strong>12 prompts</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="command-strip" aria-label="Library controls">
+          <div class="segmented-control" role="tablist" aria-label="Sort prompts">
+            <button class="segment active" type="button" data-sort="recent">Recent</button>
+            <button class="segment" type="button" data-sort="popular">Most copied</button>
+            <button class="segment" type="button" data-sort="title">A-Z</button>
+          </div>
+          <label class="checkbox-control">
+            <input id="mineOnlyToggle" type="checkbox" />
+            <span>Mine only</span>
+          </label>
+        </section>
+
+        <section class="prompt-grid" id="promptGrid" aria-live="polite"></section>
+        <section class="empty-state" id="emptyState" hidden>
+          <h2>No prompts found</h2>
+          <p>Try another search or add the prompt your group keeps rewriting.</p>
+          <button class="primary-action compact" type="button" id="emptyNewPromptButton">New prompt</button>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog class="modal" id="promptModal">
+      <form method="dialog" class="modal-box" id="promptForm">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Library item</p>
+            <h2 id="modalTitle">New prompt</h2>
+          </div>
+          <button class="icon-button" type="button" data-close-modal aria-label="Close">×</button>
+        </div>
+
+        <label>
+          <span>Title</span>
+          <input id="promptTitle" name="title" required maxlength="80" placeholder="e.g. Earnings call red-flag scan" />
+        </label>
+
+        <div class="field-row">
+          <label>
+            <span>Category</span>
+            <select id="promptCategory" name="category">
+              <option value="investing">Investing</option>
+              <option value="research">Research</option>
+              <option value="portfolio">Portfolio</option>
+              <option value="productivity">Productivity</option>
+            </select>
+          </label>
+          <label>
+            <span>Visibility</span>
+            <select id="promptVisibility" name="visibility">
+              <option value="team">Team</option>
+              <option value="private">Private</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          <span>Prompt</span>
+          <textarea id="promptBody" name="body" required rows="9" placeholder="Paste the reusable prompt here. Use variables like {{ticker}}, {{company}}, or {{timeframe}}."></textarea>
+        </label>
+
+        <label>
+          <span>Tags</span>
+          <input id="promptTags" name="tags" placeholder="earnings, valuation, risk" />
+        </label>
+
+        <div class="modal-actions">
+          <button class="secondary-action" type="button" data-close-modal>Cancel</button>
+          <button class="primary-action compact" type="submit">Save prompt</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="authModal">
+      <form method="dialog" class="modal-box narrow" id="authForm">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Account</p>
+            <h2>Sign in</h2>
+          </div>
+          <button class="icon-button" type="button" data-close-auth aria-label="Close">×</button>
+        </div>
+        <label>
+          <span>Name</span>
+          <input id="authName" name="name" required placeholder="Your name" />
+        </label>
+        <label>
+          <span>Email</span>
+          <input id="authEmail" name="email" required type="email" placeholder="you@example.com" />
+        </label>
+        <p class="form-note">Local mode stores this profile in your browser. With Supabase configured, this sends an email sign-in link.</p>
+        <div class="modal-actions">
+          <button class="secondary-action" type="button" data-close-auth>Cancel</button>
+          <button class="primary-action compact" type="submit">Continue</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./config.js"></script>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
