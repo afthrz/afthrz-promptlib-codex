@@ -4,7 +4,7 @@ const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
 
 const seedPrompts = [
   {
-    id: crypto.randomUUID(),
+    id: "00000000-0000-4000-8000-000000000001",
     title: "Earnings Call Red-Flag Scan",
     category: "investing",
     visibility: "team",
@@ -17,7 +17,7 @@ const seedPrompts = [
     createdAt: "2026-04-24T09:20:00.000Z",
   },
   {
-    id: crypto.randomUUID(),
+    id: "00000000-0000-4000-8000-000000000002",
     title: "Valuation Bear/Base/Bull Case",
     category: "investing",
     visibility: "team",
@@ -30,7 +30,7 @@ const seedPrompts = [
     createdAt: "2026-04-26T12:10:00.000Z",
   },
   {
-    id: crypto.randomUUID(),
+    id: "00000000-0000-4000-8000-000000000003",
     title: "Portfolio Concentration Check",
     category: "portfolio",
     visibility: "team",
@@ -43,7 +43,7 @@ const seedPrompts = [
     createdAt: "2026-04-28T16:35:00.000Z",
   },
   {
-    id: crypto.randomUUID(),
+    id: "00000000-0000-4000-8000-000000000004",
     title: "Company Deep Research Brief",
     category: "research",
     visibility: "team",
@@ -56,7 +56,7 @@ const seedPrompts = [
     createdAt: "2026-04-29T08:15:00.000Z",
   },
   {
-    id: crypto.randomUUID(),
+    id: "00000000-0000-4000-8000-000000000005",
     title: "News Impact Triage",
     category: "investing",
     visibility: "team",
@@ -69,7 +69,7 @@ const seedPrompts = [
     createdAt: "2026-05-01T10:00:00.000Z",
   },
   {
-    id: crypto.randomUUID(),
+    id: "00000000-0000-4000-8000-000000000006",
     title: "AI Workflow Optimizer",
     category: "productivity",
     visibility: "team",
@@ -344,6 +344,7 @@ function getVisiblePrompts() {
 function renderPromptCard(prompt) {
   const tags = prompt.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
   const visibilityClass = prompt.visibility === "private" ? "visibility private" : "visibility";
+  const visibilityText = prompt.visibility === "private" ? "draft" : "pool";
 
   return `
     <article class="prompt-card">
@@ -352,7 +353,7 @@ function renderPromptCard(prompt) {
           <h3>${escapeHtml(prompt.title)}</h3>
           <p class="prompt-meta">${escapeHtml(prompt.author)} · ${formatDate(prompt.createdAt)} · ${prompt.copies} copies</p>
         </div>
-        <span class="${visibilityClass}">${prompt.visibility}</span>
+        <span class="${visibilityClass}">${visibilityText}</span>
       </header>
       <p class="prompt-body">${escapeHtml(prompt.body)}</p>
       <div class="tag-row">${tags}</div>
@@ -416,18 +417,6 @@ async function toggleFavorite(prompt) {
 }
 
 async function deletePrompt(prompt) {
-  if (!state.user) {
-    openAuthModal();
-    showToast("Sign in before deleting prompts.");
-    return;
-  }
-
-  const canDelete = prompt.authorEmail === state.user.email;
-  if (!canDelete) {
-    showToast("Only the author can delete this prompt.");
-    return;
-  }
-
   state.prompts = state.prompts.filter((item) => item.id !== prompt.id);
   persistLocal();
   await deleteRemotePrompt(prompt);
@@ -436,12 +425,6 @@ async function deletePrompt(prompt) {
 }
 
 function openPromptModal(prompt = null) {
-  if (!state.user) {
-    openAuthModal();
-    showToast("Sign in before adding prompts.");
-    return;
-  }
-
   state.editingId = prompt?.id ?? null;
   elements.modalTitle.textContent = prompt ? "Edit prompt" : "New prompt";
   elements.promptTitle.value = prompt?.title ?? "";
@@ -470,8 +453,8 @@ async function savePrompt(event) {
     visibility: form.get("visibility"),
     body: form.get("body").trim(),
     tags,
-    author: state.user.name,
-    authorEmail: state.user.email,
+    author: state.user?.name || "Guest",
+    authorEmail: state.user?.email || "guest@promptdesk.local",
   };
 
   if (state.editingId) {
@@ -511,34 +494,15 @@ async function saveUser(event) {
   const form = new FormData(elements.authForm);
   const user = {
     name: form.get("name").trim(),
-    email: form.get("email").trim().toLowerCase(),
+    email: form.get("email").trim().toLowerCase() || `${slugify(form.get("name"))}@promptdesk.local`,
   };
-
-  if (state.supabase) {
-    const { error } = await state.supabase.auth.signInWithOtp({
-      email: user.email,
-      options: {
-        data: { name: user.name },
-        emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
-      },
-    });
-
-    if (error) {
-      showToast("Could not send sign-in email.");
-      return;
-    }
-
-    elements.authModal.close();
-    showToast("Check your email for the sign-in link.");
-    return;
-  }
 
   state.user = user;
   localStorage.setItem(USER_KEY, JSON.stringify(state.user));
   elements.authModal.close();
   updateAuthUI();
   render();
-  showToast(`Signed in as ${state.user.name}`);
+  showToast(`Posting as ${state.user.name}`);
 }
 
 function updateAuthUI() {
@@ -547,13 +511,13 @@ function updateAuthUI() {
   if (state.user) {
     elements.authButton.textContent = state.user.name;
     elements.sharingText.textContent = isSupabase
-      ? "You are signed in with Supabase. New prompts sync to the shared team library."
-      : "You are signed in locally. Prompts you add are saved in this browser and can be exported.";
+      ? "Shared pool mode is active. Anyone with the link can add, edit, and delete prompts."
+      : "Local mode is active. Anyone using this browser can add, edit, and delete prompts.";
   } else {
-    elements.authButton.textContent = "Sign in";
+    elements.authButton.textContent = "Set name";
     elements.sharingText.textContent = isSupabase
-      ? "Supabase sync is configured. Sign in by email to add shared prompts."
-      : "Sign in locally to personalize prompts. Add Supabase keys later for true shared accounts and sync.";
+      ? "Shared pool mode is active. Set a display name if you want prompts attributed to you."
+      : "Local mode is active. Add Supabase keys to share one prompt pool across every visitor.";
   }
 
   elements.syncBadge.textContent = isSupabase ? "Shared" : "Local";
@@ -639,4 +603,12 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function slugify(value) {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "guest";
 }

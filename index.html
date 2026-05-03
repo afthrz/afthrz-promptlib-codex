@@ -54,8 +54,8 @@
             <h2>Sharing</h2>
             <span id="syncBadge">Local</span>
           </div>
-          <p id="sharingText">Sign in locally to personalize prompts. Add Supabase keys later for true shared accounts and sync.</p>
-          <button class="secondary-action" id="authButton" type="button">Sign in</button>
+          <p id="sharingText">Local mode is active. Add Supabase keys to share one prompt pool across every visitor.</p>
+          <button class="secondary-action" id="authButton" type="button">Set name</button>
         </div>
       </aside>
 
@@ -154,8 +154,7 @@
           <label>
             <span>Visibility</span>
             <select id="promptVisibility" name="visibility">
-              <option value="team">Team</option>
-              <option value="private">Private</option>
+              <option value="team">Pool</option>
             </select>
           </label>
         </div>
@@ -181,8 +180,8 @@
       <form method="dialog" class="modal-box narrow" id="authForm">
         <div class="modal-head">
           <div>
-            <p class="eyebrow">Account</p>
-            <h2>Sign in</h2>
+            <p class="eyebrow">Profile</p>
+            <h2>Set display name</h2>
           </div>
           <button class="icon-button" type="button" data-close-auth aria-label="Close">×</button>
         </div>
@@ -191,10 +190,10 @@
           <input id="authName" name="name" required placeholder="Your name" />
         </label>
         <label>
-          <span>Email</span>
-          <input id="authEmail" name="email" required type="email" placeholder="you@example.com" />
+          <span>Email optional</span>
+          <input id="authEmail" name="email" type="email" placeholder="you@example.com" />
         </label>
-        <p class="form-note">Local mode stores this profile in your browser. With Supabase configured, this sends an email sign-in link.</p>
+        <p class="form-note">This only labels prompts you add. The shared pool stays open to anyone with the link.</p>
         <div class="modal-actions">
           <button class="secondary-action" type="button" data-close-auth>Cancel</button>
           <button class="primary-action compact" type="submit">Continue</button>

@@ -6,7 +6,8 @@ A static prompt library for investing and repeatable AI workflows. It runs local
 
 - Search, category filters, favorites, sorting, and "mine only" filtering
 - Add, edit, delete, copy, export, and import prompts
-- Local sign-in so each friend can personalize authorship during the demo
+- Optional display names so prompts can show who added them
+- Open pool mode: anyone with the link can add, edit, and remove prompts when Supabase is configured
 - Responsive UI designed for frequent reuse, not a marketing landing page
 
 ## Deploy
@@ -26,11 +27,10 @@ Vercel settings:
 
 ## Make It Truly Shared
 
-The app is local-first by default, and it can switch into Supabase sync when `config.js` has project keys.
+The app is local-first by default. Vercel can host the files, but it cannot share browser storage between friends by itself. To make one shared prompt pool for everyone with the link, connect Supabase in `config.js`.
 
 1. Create a Supabase project.
-2. Enable email auth in Authentication.
-3. Create a `prompts` table:
+2. Create a `prompts` table:
 
 ```sql
 create table prompts (
@@ -48,29 +48,30 @@ create table prompts (
 );
 ```
 
-4. Enable row-level security and add starter policies:
+3. Enable row-level security and add open pool policies:
 
 ```sql
 alter table prompts enable row level security;
 
-create policy "Read team prompts"
+create policy "Anyone can read prompts"
 on prompts for select
-using (visibility = 'team' or auth.jwt() ->> 'email' = author_email);
+using (true);
 
-create policy "Create own prompts"
+create policy "Anyone can create prompts"
 on prompts for insert
-with check (auth.jwt() ->> 'email' = author_email);
+with check (true);
 
-create policy "Update own prompts"
+create policy "Anyone can update prompts"
 on prompts for update
-using (auth.jwt() ->> 'email' = author_email);
+using (true)
+with check (true);
 
-create policy "Delete own prompts"
+create policy "Anyone can delete prompts"
 on prompts for delete
-using (auth.jwt() ->> 'email' = author_email);
+using (true);
 ```
 
-5. Add your public Supabase values to `config.js`:
+4. Add your public Supabase values to `config.js`:
 
 ```js
 window.PROMPT_DESK_CONFIG = {
@@ -80,3 +81,5 @@ window.PROMPT_DESK_CONFIG = {
 ```
 
 The anon key is designed to be public in browser apps. Keep service role keys out of this project.
+
+Open pool mode is intentionally permissive: anyone with the site link can add, edit, and delete prompts. If you later want moderation or author-only deletes, tighten the RLS policies and reintroduce authentication.
